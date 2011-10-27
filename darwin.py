@@ -53,8 +53,6 @@ class Environment:
 
 
 	def Fitness(self, recipe):
-		print recipe[0]
-		return 0
 		f = 0.0
 		for c in self.cmds:
 			cmd = list(c)
@@ -129,9 +127,9 @@ recipe.crossover.set(cross)
 ga = GSimpleGA.GSimpleGA(recipe)
 ga.pMutation = 0.1
 ga.pCrossover = 0.01
-ga.setGenerations(300)
-ga.setPopulationSize(200)
+ga.setGenerations(30)
+ga.setPopulationSize(100)
 ga.setMinimax(Consts.minimaxType["minimize"])
-ga.evolve(freq_stats=10)
+ga.evolve(freq_stats=1)
 print ga.bestIndividual()
 
