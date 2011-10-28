@@ -37,6 +37,7 @@ class Environment:
 	def __init__(self):
 		self.Vars = list()
 		self.cmds = list()
+		self.nSeeds = 1
 
 		self.w_missing  = 200.0
 		self.w_extra    = 200.0
@@ -54,29 +55,30 @@ class Environment:
 
 	def Fitness(self, recipe):
 		f = 0.0
-		for c in self.cmds:
-			cmd = list(c)
-			for var in self.Vars:
-				cmd.append( "-f" + str(var.name) + ":" + str(var.Eval( recipe[self.Vars.index(var)] )) )
+		for i in range(1, nSeeds):
+			for c in self.cmds:
+				cmd = list(c)
+				for var in self.Vars:
+					cmd.append( "-f" + str(var.name) + ":" + str(var.Eval( recipe[self.Vars.index(var)] )) )
+				cmd.extend( "-s", str(i) )
 
 
-			
-			output = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
+				output = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
 
-			missing  = self.GetValue('^Missing:\s*([0-9]+\.?[0-9]*)', output)
-			extra    = self.GetValue('^Extra:\s*([0-9]+\.?[0-9]*)', output)
-			failed   = self.GetValue('^Failed:\s*([0-9]+\.?[0-9]*)', output)
-			tracking = self.GetValue('^Tracking:\s*([0-9]+\.?[0-9]*)', output)
 
-			if( missing != None ):
-				f = f + missing * self.w_missing
-			if( extra != None ):
-				f = f + extra * self.w_extra
-			if( failed != None ):
-				f = f + failed * self.w_failed
-			if( tracking != None ):
-				print tracking
-				f = f + tracking * self.w_tracking
+				missing  = self.GetValue('^Missing:\s*([0-9]+\.?[0-9]*)', output)
+				extra    = self.GetValue('^Extra:\s*([0-9]+\.?[0-9]*)', output)
+				failed   = self.GetValue('^Failed:\s*([0-9]+\.?[0-9]*)', output)
+				tracking = self.GetValue('^Tracking:\s*([0-9]+\.?[0-9]*)', output)
+
+				if( missing != None ):
+					f = f + missing * self.w_missing
+				if( extra != None ):
+					f = f + extra * self.w_extra
+				if( failed != None ):
+					f = f + failed * self.w_failed
+				if( tracking != None ):
+					f = f + tracking * self.w_tracking
 
 		return f
 # --------------------------------------------
@@ -89,6 +91,37 @@ class Environment:
 def cross(recipe, **args):
 	return (args["mom"], args["dad"])
 
+
+
+# -----------------------------------------------
+# GenAlg class
+#
+# class encapsulating all genetic algorithm
+# behavior of pyevolve
+# -----------------------------------------------
+class GenAlg:
+	def __init__(self, indSize, env, gens, popSize, 
+				 stddev=0.01, pMut=0.5, pCross=0.01, freq=10)
+		self.recipe = G1DList.G1DList(indSize)
+		self.recipe.evaluator.set(env.Fitness)
+		self.recipe.initializator.set(Initializators.G1DListInitializatorReal)
+		self.recipe.mutator.set(Mutators.G1DListMutatorRealGaussian);
+		self.recipe.setParams(rangemin=0.0, rangemax=1.0, gauss_mu=0.0, gauss_sigma=stddev)
+		self.recipe.crossover.set(cross)
+		#recipe.crossover.set(Crossovers.G1DListCrossoverUniform)
+		
+		self.ga = GSimpleGA.GSimpleGA(self.recipe)
+		self.ga.pMutation = pMut
+		self.ga.pCrossover = pCross
+		self.ga.setGenerations(gens)
+		self.ga.setPopulationSize(popSize)
+		self.ga.setMinimax(Consts.minimaxType["minimize"])
+
+
+	def Run(self):
+		self.ga.evolve(freq_stats=self.freq)
+		print self.ga.bestIndividual()
+# ---------------------------------------------------------
 
 
 
@@ -104,7 +137,7 @@ options = "--post=jump --post=check-against --no-mp"
 env = Environment()
 
 for name in polysys:
-	cmdLine = ["/home/ovenhouse/h3/h3", "-s1", 
+	cmdLine = ["/home/ovenhouse/h3/h3", 
 					  "-fanswers:/home/ovenhouse/h3/testcases/answers/" + str(name),
 					  "/home/ovenhouse/h3/testcases/" + str(name) + ".lee"]
 	cmdLine.extend( options.split() )
@@ -114,6 +147,9 @@ env.Vars.append( Variable("facet-begin",    2.0, 6.0, -1.0) )
 env.Vars.append( Variable("facet-stable",   1.0, 4.0, -1.0) )
 env.Vars.append( Variable("facet-small",    1.0, 4.0, -1.0) )
 env.Vars.append( Variable("facet-negative", 0.7, 4.0, -1.0) )
+
+env.nSeeds = 1
+
 
 
 recipe = G1DList.G1DList(4)
