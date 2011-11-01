@@ -55,16 +55,14 @@ class Environment:
 
 	def Fitness(self, recipe):
 		f = 0.0
-		for i in range(1, nSeeds):
+		for i in range(1, self.nSeeds+1):
 			for c in self.cmds:
 				cmd = list(c)
 				for var in self.Vars:
 					cmd.append( "-f" + str(var.name) + ":" + str(var.Eval( recipe[self.Vars.index(var)] )) )
-				cmd.extend( "-s", str(i) )
-
+				cmd.extend( ["-s", str(i)] )
 
 				output = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
-
 
 				missing  = self.GetValue('^Missing:\s*([0-9]+\.?[0-9]*)', output)
 				extra    = self.GetValue('^Extra:\s*([0-9]+\.?[0-9]*)', output)
@@ -100,72 +98,30 @@ def cross(recipe, **args):
 # behavior of pyevolve
 # -----------------------------------------------
 class GenAlg:
-	def __init__(self, indSize, env, gens, popSize, 
-				 stddev=0.01, pMut=0.5, pCross=0.01, freq=10)
-		self.recipe = G1DList.G1DList(indSize)
-		self.recipe.evaluator.set(env.Fitness)
+	def __init__(self, stddev=0.01, pMut=0.5, pCross=0.01, freq=10):
+		self.env = Environment()
+		self.stddev = stddev
+		self.pMut = pMut
+		self.pCross = pCross
+		
+	def Run(self, gens, popSize, dispFreq):
+		self.recipe = G1DList.G1DList( len(self.env.Vars) )
+		self.recipe.evaluator.set(self.env.Fitness)
 		self.recipe.initializator.set(Initializators.G1DListInitializatorReal)
 		self.recipe.mutator.set(Mutators.G1DListMutatorRealGaussian);
-		self.recipe.setParams(rangemin=0.0, rangemax=1.0, gauss_mu=0.0, gauss_sigma=stddev)
+		self.recipe.setParams(rangemin=0.0, rangemax=1.0, gauss_mu=0.0, gauss_sigma=self.stddev)
 		self.recipe.crossover.set(cross)
 		#recipe.crossover.set(Crossovers.G1DListCrossoverUniform)
 		
 		self.ga = GSimpleGA.GSimpleGA(self.recipe)
-		self.ga.pMutation = pMut
-		self.ga.pCrossover = pCross
+		self.ga.pMutation = self.pMut
+		self.ga.pCrossover = self.pCross
 		self.ga.setGenerations(gens)
 		self.ga.setPopulationSize(popSize)
 		self.ga.setMinimax(Consts.minimaxType["minimize"])
 
-
-	def Run(self):
-		self.ga.evolve(freq_stats=self.freq)
+		self.ga.evolve(freq_stats=dispFreq)
 		print self.ga.bestIndividual()
 # ---------------------------------------------------------
 
-
-
-
-# ------------------------------------------
-# main driver
-#
-# -----------------------------------------
-
-polysys = ['cassou', 'barry', 'boon', 'heart', 'cyclic5', 'cyclic6', 'cyclic7', 'reimer4', 'reimer5', 'reimer6', 'reimer7']
-options = "--post=jump --post=check-against --no-mp"
-
-env = Environment()
-
-for name in polysys:
-	cmdLine = ["/home/ovenhouse/h3/h3", 
-					  "-fanswers:/home/ovenhouse/h3/testcases/answers/" + str(name),
-					  "/home/ovenhouse/h3/testcases/" + str(name) + ".lee"]
-	cmdLine.extend( options.split() )
-	env.cmds.append( cmdLine )
-
-env.Vars.append( Variable("facet-begin",    2.0, 6.0, -1.0) )
-env.Vars.append( Variable("facet-stable",   1.0, 4.0, -1.0) )
-env.Vars.append( Variable("facet-small",    1.0, 4.0, -1.0) )
-env.Vars.append( Variable("facet-negative", 0.7, 4.0, -1.0) )
-
-env.nSeeds = 1
-
-
-
-recipe = G1DList.G1DList(4)
-recipe.evaluator.set(env.Fitness)
-recipe.initializator.set(Initializators.G1DListInitializatorReal)
-recipe.mutator.set(Mutators.G1DListMutatorRealGaussian);
-recipe.setParams(rangemin=0.0, rangemax=1.0, gauss_mu=0.0, gauss_sigma=0.001)
-recipe.crossover.set(cross)
-#recipe.crossover.set(Crossovers.G1DListCrossoverUniform)
-
-ga = GSimpleGA.GSimpleGA(recipe)
-ga.pMutation = 0.1
-ga.pCrossover = 0.01
-ga.setGenerations(30)
-ga.setPopulationSize(100)
-ga.setMinimax(Consts.minimaxType["minimize"])
-ga.evolve(freq_stats=1)
-print ga.bestIndividual()
 
