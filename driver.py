@@ -6,7 +6,7 @@ import darwin
 #
 # -----------------------------------------
 
-polysys = ['cassou', 'barry', 'boon', 'heart', 'cyclic5', 'cyclic6', 'cyclic7', 'reimer4', 'reimer5'] #, 'reimer6', 'reimer7']
+polysys = ['cassou', 'barry', 'boon', 'heart', 'cyclic5', 'cyclic6', 'cyclic7', 'reimer4', 'reimer5', 'reimer6', 'reimer7']
 options = "--post=jump --post=check-against --no-mp"
 
 alg = darwin.GenAlg()
