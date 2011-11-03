@@ -6,7 +6,7 @@ import darwin
 #
 # -----------------------------------------
 
-polysys = ['cassou', 'barry'] #, 'boon', 'heart', 'cyclic5', 'cyclic6', 'cyclic7', 'reimer4', 'reimer5', 'reimer6', 'reimer7']
+polysys = ['cassou', 'barry', 'boon', 'heart', 'cyclic5', 'cyclic6', 'cyclic7', 'reimer4', 'reimer5', 'reimer6', 'reimer7']
 options = "--post=jump --post=check-against --no-mp"
 
 alg = darwin.GenAlg()
@@ -20,7 +20,7 @@ for name in polysys:
 
 
 
-alg.env.nSeeds = 1
+alg.env.nSeeds = 1		# number of random seeds to try
 alg.env.Vars.append( darwin.Variable("facet-begin",    2.0, 6.0, -1.0) )
 alg.env.Vars.append( darwin.Variable("facet-stable",   1.0, 4.0, -1.0) )
 alg.env.Vars.append( darwin.Variable("facet-small",    1.0, 4.0, -1.0) )
