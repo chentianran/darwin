@@ -21,7 +21,7 @@ class Variable:
 		self.sign = sign
 
 
-	def Eval(self, x):
+	def eval(self, x):
 		power = self.Min + x*(self.Max-self.Min)
 		return 10**(self.sign*power)
 # ------------------------------------
@@ -45,7 +45,7 @@ class Environment:
 		self.w_tracking = 1.0
 
 
-	def GetValue(self, match, string):
+	def __getValue(self, match, string):
 		g = re.search(match, string, flags=re.MULTILINE)
 		if (g != None):
 			return float(g.group(1))
@@ -53,21 +53,21 @@ class Environment:
 			return None
 
 
-	def Fitness(self, recipe):
+	def fitness(self, recipe):
 		f = 0.0
 		for i in range(1, self.nSeeds+1):
 			for c in self.cmds:
 				cmd = list(c)
 				for var in self.Vars:
-					cmd.append( "-f" + str(var.name) + ":" + str(var.Eval( recipe[self.Vars.index(var)] )) )
+					cmd.append( "-f" + str(var.name) + ":" + str(var.eval( recipe[self.Vars.index(var)] )) )
 				cmd.extend( ["-s", str(i)] )
 
 				output = subprocess.check_output( cmd, stderr=subprocess.STDOUT )
 
-				missing  = self.GetValue('^Missing:\s*([0-9]+\.?[0-9]*)', output)
-				extra    = self.GetValue('^Extra:\s*([0-9]+\.?[0-9]*)', output)
-				failed   = self.GetValue('^Failed:\s*([0-9]+\.?[0-9]*)', output)
-				tracking = self.GetValue('^Tracking:\s*([0-9]+\.?[0-9]*)', output)
+				missing  = self.__getValue('^Missing:\s*([0-9]+\.?[0-9]*)', output)
+				extra    = self.__getValue('^Extra:\s*([0-9]+\.?[0-9]*)', output)
+				failed   = self.__getValue('^Failed:\s*([0-9]+\.?[0-9]*)', output)
+				tracking = self.__getValue('^Tracking:\s*([0-9]+\.?[0-9]*)', output)
 
 				if( missing != None ):
 					f = f + missing * self.w_missing
@@ -98,15 +98,15 @@ def cross(recipe, **args):
 # behavior of pyevolve
 # -----------------------------------------------
 class GenAlg:
-	def __init__(self, stddev=0.01, pMut=0.5, pCross=0.01, freq=10):
+	def __init__(self, stddev=0.01, pMut=0.5, pCross=0.01, freq=10, bestN=1):
 		self.env = Environment()
 		self.stddev = stddev
 		self.pMut = pMut
 		self.pCross = pCross
 		
-	def Run(self, gens, popSize, dispFreq):
+	def run(self, gens, popSize, dispFreq, bestN):
 		self.recipe = G1DList.G1DList( len(self.env.Vars) )
-		self.recipe.evaluator.set(self.env.Fitness)
+		self.recipe.evaluator.set(self.env.fitness)
 		self.recipe.initializator.set(Initializators.G1DListInitializatorReal)
 		self.recipe.mutator.set(Mutators.G1DListMutatorRealGaussian);
 		self.recipe.setParams(rangemin=0.0, rangemax=1.0, gauss_mu=0.0, gauss_sigma=self.stddev)
@@ -121,7 +121,17 @@ class GenAlg:
 		self.ga.setMinimax(Consts.minimaxType["minimize"])
 
 		self.ga.evolve(freq_stats=dispFreq)
-		print self.ga.bestIndividual()
+		
+		print '\n'
+		if (bestN > popSize):
+			bestN = popSize
+
+		dictList = list()
+		for n in range(0,bestN):
+			best = self.ga.getPopulation().bestFitness(n)
+			var = dict( [ (v.name, v.eval(best[self.env.Vars.index(v)])) for v in self.env.Vars ] )
+			dictList.append(var)
+		return dictList
 # ---------------------------------------------------------
 
 
