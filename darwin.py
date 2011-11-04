@@ -1,6 +1,5 @@
 import subprocess
-import re
-
+import re 
 from pyevolve import G1DList
 from pyevolve import GSimpleGA
 from pyevolve import Consts
@@ -120,18 +119,26 @@ class GenAlg:
 		self.ga.setPopulationSize(popSize)
 		self.ga.setMinimax(Consts.minimaxType["minimize"])
 
-		self.ga.evolve(freq_stats=dispFreq)
-		
-		print '\n'
-		if (bestN > popSize):
-			bestN = popSize
 
-		dictList = list()
-		for n in range(0,bestN):
-			best = self.ga.getPopulation().bestFitness(n)
-			var = dict( [ (v.name, v.eval(best[self.env.Vars.index(v)])) for v in self.env.Vars ] )
-			dictList.append(var)
-		return dictList
+
+		for i in range(0,gens):
+		    self.ga.step()
+            #dictList = list()
+	    	if( i%dispFreq == 0 ):
+                print "\n"
+                print "Generation", i+1
+               	if (bestN > popSize):
+               		bestN = popSize
+				for n in range(0,bestN):
+					best = self.ga.getPopulation().bestFitness(n)
+					var = dict( [ (v.name, v.eval(best[self.env.Vars.index(v)])) for v in self.env.Vars ] )
+					dictList.append(var)
+                    for ind in range(0,len(best)):
+                    	print "\nRank", ind+1, "individual:"
+                    	for v in alg.env.Vars:
+                    		print v.name, (best[ind])[v.name]
+		
+        return dictList
 # ---------------------------------------------------------
 
 
