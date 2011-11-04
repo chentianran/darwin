@@ -6,7 +6,7 @@ import darwin
 #
 # -----------------------------------------
 
-polysys = ['cassou', 'barry'] #, 'boon', 'heart', 'cyclic5', 'cyclic6', 'cyclic7', 'reimer4', 'reimer5', 'reimer6', 'reimer7']
+polysys = ['barry'] #, 'cassou', 'boon', 'heart', 'cyclic5', 'cyclic6', 'cyclic7', 'reimer4', 'reimer5', 'reimer6', 'reimer7']
 options = "--post=jump --post=check-against --no-mp -estack"
 
 alg = darwin.GenAlg()
@@ -26,7 +26,7 @@ alg.env.Vars.append( darwin.Variable("facet-stable",   1.0, 4.0, -1.0) )
 alg.env.Vars.append( darwin.Variable("facet-small",    1.0, 4.0, -1.0) )
 alg.env.Vars.append( darwin.Variable("facet-negative", 0.7, 4.0, -1.0) )
 
-best = alg.run( gens=2, popSize=2, dispFreq=1, bestN=1 )
+best = alg.run( generations=3, population=7, bestN=3 )
 
 for ind in range(0,len(best)):
 	print "\nRank", ind+1, "individual:"

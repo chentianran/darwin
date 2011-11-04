@@ -97,13 +97,30 @@ def cross(recipe, **args):
 # behavior of pyevolve
 # -----------------------------------------------
 class GenAlg:
-	def __init__(self, stddev=0.01, pMut=0.5, pCross=0.01, freq=10, bestN=1):
+	def __init__(self, stddev=0.01, pMut=0.5, pCross=0.01, bestN=1):
 		self.env = Environment()
 		self.stddev = stddev
 		self.pMut = pMut
 		self.pCross = pCross
-		
-	def run(self, gens, popSize, dispFreq, bestN):
+		self.bestN = 1
+		self.currGen = 0
+
+	def __everyGen(self, ga):
+		self.currGen += 1
+		print "\nGeneration:", self.currGen
+		if (self.bestN > len(ga.getPopulation())):
+			self.bestN = len(ga.getPopulation())
+		for n in range(0,self.bestN):
+			best = ga.getPopulation().bestFitness(n)
+			var = dict( [ (v.name, v.eval(best[self.env.Vars.index(v)])) for v in self.env.Vars ] )
+			print "\nRank", n+1, "individual:"
+			for k in var:
+				print k, var[k]
+		print "\n----------"
+
+	def run(self, generations, population, bestN):
+		self.currGen = 0
+		self.bestN = bestN
 		self.recipe = G1DList.G1DList( len(self.env.Vars) )
 		self.recipe.evaluator.set(self.env.fitness)
 		self.recipe.initializator.set(Initializators.G1DListInitializatorReal)
@@ -115,30 +132,22 @@ class GenAlg:
 		self.ga = GSimpleGA.GSimpleGA(self.recipe)
 		self.ga.pMutation = self.pMut
 		self.ga.pCrossover = self.pCross
-		self.ga.setGenerations(gens)
-		self.ga.setPopulationSize(popSize)
+		self.ga.setGenerations(generations)
+		self.ga.setPopulationSize(population)
 		self.ga.setMinimax(Consts.minimaxType["minimize"])
+		self.ga.stepCallback.set(self.__everyGen)
 
+		self.ga.evolve()
 
+		dictList = list()
+		if( bestN > population ):
+			bestN = population
+		for i in range(0,bestN):
+			best = self.ga.getPopulation().bestFitness(i)
+			var = dict( [ (v.name, v.eval(best[self.env.Vars.index(v)])) for v in self.env.Vars ] )
+			dictList.append(var)
 
-		for i in range(0,gens):
-		    self.ga.step()
-            #dictList = list()
-	    	if( i%dispFreq == 0 ):
-                print "\n"
-                print "Generation", i+1
-               	if (bestN > popSize):
-               		bestN = popSize
-				for n in range(0,bestN):
-					best = self.ga.getPopulation().bestFitness(n)
-					var = dict( [ (v.name, v.eval(best[self.env.Vars.index(v)])) for v in self.env.Vars ] )
-					dictList.append(var)
-                    for ind in range(0,len(best)):
-                    	print "\nRank", ind+1, "individual:"
-                    	for v in alg.env.Vars:
-                    		print v.name, (best[ind])[v.name]
-		
-        return dictList
+		return dictList
 # ---------------------------------------------------------
 
 
